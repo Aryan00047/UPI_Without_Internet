@@ -9,6 +9,9 @@ WORKDIR /app
 COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
+# The git-tracked file mode on mvnw isn't reliably +x after a Windows
+# checkout/commit, so set it explicitly rather than depending on it.
+RUN chmod +x mvnw
 RUN ./mvnw -B dependency:go-offline
 
 COPY src src
