@@ -21,6 +21,9 @@ public class Account {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal balance;
 
+    @Column(length = 1024)
+    private String publicKeyBase64; // sender's RSA public key (X.509 SPKI), for signature verification
+
     @Version  // Optimistic locking — prevents lost updates on concurrent transfers
     private Long version;
 
@@ -43,4 +46,7 @@ public class Account {
 
     public Long getVersion() { return version; }
     public void setVersion(Long version) { this.version = version; }
+
+    public String getPublicKeyBase64() { return publicKeyBase64; }
+    public void setPublicKeyBase64(String publicKeyBase64) { this.publicKeyBase64 = publicKeyBase64; }
 }

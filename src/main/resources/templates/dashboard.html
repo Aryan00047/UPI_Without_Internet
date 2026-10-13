@@ -169,7 +169,7 @@ async function refresh() {
             <span class="badge ${d.hasInternet ? 'badge-online' : 'badge-offline'}">
                 ${d.hasInternet ? '🌐 4G' : '🚫 OFFLINE'}
             </span>
-            <span class="small">holding ${d.packetCount} packet(s)</span>
+            <span class="small">holding ${d.packetCount}/${d.maxCapacity} packet(s)${d.droppedForCapacity > 0 ? ` — ${d.droppedForCapacity} dropped (capacity)` : ''}</span>
             <div>${d.packetIds.map(id => `<span class="packet-id">${id}</span>`).join('')}</div>
         </div>
     `).join('');
@@ -216,7 +216,7 @@ async function sendPacket() {
 
 async function gossip() {
     const r = await fetch('/api/mesh/gossip', {method: 'POST'}).then(r => r.json());
-    log(`🔄 Gossip: ${r.transfers} transfer(s) — ${JSON.stringify(r.deviceCounts)}`);
+    log(`🔄 Gossip: ${r.transfers} transfer(s), ${r.droppedForCapacity} dropped (capacity) — ${JSON.stringify(r.deviceCounts)}`);
     refresh();
 }
 

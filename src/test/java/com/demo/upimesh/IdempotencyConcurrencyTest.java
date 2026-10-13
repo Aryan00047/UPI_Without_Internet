@@ -95,6 +95,31 @@ class IdempotencyConcurrencyTest {
     }
 
     @Test
+    void forgedSenderSignatureIsRejected() throws Exception {
+        // Build a legitimate-looking instruction but sign it with the WRONG
+        // sender's key — simulates someone trying to impersonate alice.
+        PaymentInstruction instruction = new PaymentInstruction(
+                "alice@demo", "bob@demo", new BigDecimal("75.00"),
+                "pinhash", "nonce-forged", System.currentTimeMillis());
+
+        java.security.KeyPairGenerator gen = java.security.KeyPairGenerator.getInstance("RSA");
+        gen.initialize(2048);
+        java.security.PrivateKey impostorKey = gen.generateKeyPair().getPrivate();
+        instruction.setSignature(crypto.sign(instruction, impostorKey));
+
+        String ciphertext = crypto.encrypt(instruction, serverKey.getPublicKey());
+        MeshPacket packet = new MeshPacket();
+        packet.setPacketId(java.util.UUID.randomUUID().toString());
+        packet.setTtl(5);
+        packet.setCreatedAt(System.currentTimeMillis());
+        packet.setCiphertext(ciphertext);
+
+        BridgeIngestionService.IngestResult r = bridge.ingest(packet, "bridge-y", 1);
+        assertEquals("INVALID", r.outcome());
+        assertEquals("invalid_signature", r.reason());
+    }
+
+    @Test
     void encryptDecryptRoundTrip() throws Exception {
         PaymentInstruction original = new PaymentInstruction(
                 "alice@demo", "bob@demo", new BigDecimal("123.45"),

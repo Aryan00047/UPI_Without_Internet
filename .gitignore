@@ -6,3 +6,11 @@ target/
 *.iml
 .vscode/
 .DS_Store
+
+# Working notes, planning docs, and tooling config — not part of the
+# published project.
+/local-notes/
+/local-notes
+.claude/
+.claudeignore
+/package-lock.json

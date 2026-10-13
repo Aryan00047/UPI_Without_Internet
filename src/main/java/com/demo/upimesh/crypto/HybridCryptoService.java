@@ -13,10 +13,15 @@ import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyFactory;
 import java.security.MessageDigest;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Signature;
 import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 /**
@@ -40,6 +45,7 @@ import java.util.Base64;
 public class HybridCryptoService {
 
     private static final String RSA_TRANSFORMATION = "RSA/ECB/OAEPWithSHA-256AndMGF1Padding";
+    private static final String SIGNATURE_ALGORITHM = "SHA256withRSA";
     private static final String AES_TRANSFORMATION = "AES/GCM/NoPadding";
     private static final int AES_KEY_BITS = 256;
     private static final int GCM_IV_BYTES = 12;
@@ -123,6 +129,55 @@ public class HybridCryptoService {
         byte[] plaintext = aes.doFinal(aesCiphertext);
 
         return json.readValue(plaintext, PaymentInstruction.class);
+    }
+
+    /**
+     * Signs a payment instruction with the SENDER's private key (not the
+     * server's). Signed over every field except `signature` itself, so the
+     * server can later verify the instruction really originated from the
+     * claimed senderVpa and wasn't fabricated or reassigned to a different
+     * sender by a malicious intermediate.
+     */
+    public String sign(PaymentInstruction instruction, PrivateKey senderPrivateKey) throws Exception {
+        Signature signer = Signature.getInstance(SIGNATURE_ALGORITHM);
+        signer.initSign(senderPrivateKey);
+        signer.update(signableBytes(instruction));
+        return Base64.getEncoder().encodeToString(signer.sign());
+    }
+
+    /**
+     * Verifies a decrypted instruction's signature against the sender's
+     * registered public key. False (not an exception) on any mismatch or
+     * missing signature, so callers can treat it as a normal rejection.
+     */
+    public boolean verify(PaymentInstruction instruction, PublicKey senderPublicKey) throws Exception {
+        if (instruction.getSignature() == null || instruction.getSignature().isBlank()) {
+            return false;
+        }
+        Signature verifier = Signature.getInstance(SIGNATURE_ALGORITHM);
+        verifier.initVerify(senderPublicKey);
+        verifier.update(signableBytes(instruction));
+        return verifier.verify(Base64.getDecoder().decode(instruction.getSignature()));
+    }
+
+    /** Reconstructs an RSA public key from the base64 (X.509 SPKI) form stored on Account. */
+    public PublicKey decodeRsaPublicKey(String base64) throws Exception {
+        byte[] bytes = Base64.getDecoder().decode(base64);
+        KeyFactory kf = KeyFactory.getInstance("RSA");
+        return kf.generatePublic(new X509EncodedKeySpec(bytes));
+    }
+
+    /**
+     * Canonical byte representation signed/verified above. Must be identical
+     * whether computed on the original (pre-encryption) object or on the
+     * object rebuilt by Jackson after decryption — BigDecimal.toPlainString()
+     * keeps the same scale the JSON text carried, so this round-trips safely.
+     */
+    private byte[] signableBytes(PaymentInstruction i) {
+        String canonical = String.join("|",
+                i.getSenderVpa(), i.getReceiverVpa(), i.getAmount().toPlainString(),
+                i.getPinHash(), i.getNonce(), String.valueOf(i.getSignedAt()));
+        return canonical.getBytes(StandardCharsets.UTF_8);
     }
 
     /**

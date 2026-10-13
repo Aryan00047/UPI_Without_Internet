@@ -14,6 +14,11 @@ import java.math.BigDecimal;
  *               this, an attacker who got the ciphertext could replay it weeks later.
  *   - pinHash: in a real system the user enters a UPI PIN; we'd verify it against
  *              a hash held by the bank. Here we just record it for realism.
+ *   - signature: RSA signature (SHA256withRSA) over the other fields, made with
+ *                the sender's own private key. Proves the instruction really
+ *                came from the sender's device and wasn't fabricated by a
+ *                malicious intermediate or anyone else — the hybrid encryption
+ *                alone only protects confidentiality, not authorship.
  */
 public class PaymentInstruction {
 
@@ -23,6 +28,7 @@ public class PaymentInstruction {
     private String pinHash;
     private String nonce;     // UUID, unique per payment intent
     private Long signedAt;    // epoch millis, when sender signed
+    private String signature; // base64, SHA256withRSA over the fields above, signed by sender
 
     public PaymentInstruction() {}
 
@@ -53,4 +59,7 @@ public class PaymentInstruction {
 
     public Long getSignedAt() { return signedAt; }
     public void setSignedAt(Long signedAt) { this.signedAt = signedAt; }
+
+    public String getSignature() { return signature; }
+    public void setSignature(String signature) { this.signature = signature; }
 }

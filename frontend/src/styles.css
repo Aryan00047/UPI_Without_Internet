@@ -1,0 +1,212 @@
+/* Design tokens extracted from docs/UPI Mesh Console (standalone).html —
+   dark theme only, this tool has no light-mode requirement. */
+:root {
+  --color-bg: #121314;
+  --color-surface: #1a1b1d;
+  --color-text: #e4e5e7;
+  --color-text-muted: #9a9da3;
+  --color-text-dim: #8d9096;
+  --color-text-soft: #b4b7bc;
+  --color-accent: #7fa6cc;
+  --color-accent-600: #a3c0dc;
+  --color-accent-700: #bcd3ea;
+  --color-divider: rgba(228, 229, 231, 0.2);
+  --color-divider-soft: rgba(228, 229, 231, 0.28);
+  --color-divider-faint: rgba(228, 229, 231, 0.35);
+
+  /* Status colors — OKLCH, one per outcome, used consistently everywhere
+     a status appears (pipeline trace panel AND transaction ledger). */
+  --color-settled: oklch(0.78 0.15 152);
+  --color-rejected: oklch(0.70 0.19 25);
+  --color-duplicate: oklch(0.82 0.14 90);
+  --color-invalid: oklch(0.73 0.16 340);
+
+  --font-heading: 'Barlow Condensed', system-ui, sans-serif;
+  --font-body: 'Barlow', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  --space-1: 3.4px;
+  --space-2: 6.8px;
+  --space-3: 10.2px;
+  --space-4: 13.6px;
+  --space-6: 20.4px;
+  --space-8: 27.2px;
+
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 7px;
+
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #2b2b2d 14%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #2b2b2d 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #2b2b2d 22%, transparent);
+}
+
+* , *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 16px;
+  /* Safety net: the page itself must never scroll horizontally — any one
+     wide element (e.g. the Mesh Proximity SVG) should be constrained by
+     its own container, not blow out the whole page. */
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  margin: 0 0 var(--space-2);
+}
+
+a { color: var(--color-accent); text-underline-offset: 3px; }
+a:hover { color: var(--color-accent-600); }
+
+:focus { outline: none; }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* — blueprint frame: the recurring wireframe-card look (hairline border +
+   corner tick marks) used for every panel on the dashboard. — */
+.blueprint {
+  position: relative;
+  border: 1px solid var(--color-divider);
+}
+.blueprint > .corner {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+.blueprint > .corner::before,
+.blueprint > .corner::after {
+  content: '';
+  position: absolute;
+  background: currentColor;
+}
+.blueprint > .corner::before { left: 5px; top: 0; width: 1px; height: 100%; }
+.blueprint > .corner::after { top: 5px; left: 0; width: 100%; height: 1px; }
+.blueprint > .corner.tl { top: -6px; left: -6px; }
+.blueprint > .corner.tr { top: -6px; right: -6px; }
+.blueprint > .corner.bl { bottom: -6px; left: -6px; }
+.blueprint > .corner.br { bottom: -6px; right: -6px; }
+
+/* — buttons — */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid var(--color-divider);
+  padding: var(--space-2) calc(var(--space-3) * 1.2);
+  border-radius: var(--radius-md);
+}
+.btn svg { display: block; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary { background: var(--color-accent); color: var(--color-bg); border-color: var(--color-accent); }
+.btn-primary:hover:not(:disabled) { background: var(--color-accent-600); }
+.btn-primary:active:not(:disabled) { background: var(--color-accent-700); }
+.btn-secondary { background: transparent; }
+.btn-secondary:hover:not(:disabled) { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.btn-ghost { color: var(--color-accent); border-color: transparent; padding-inline: var(--space-1); }
+.btn-ghost:hover:not(:disabled) { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.btn-block { width: 100%; margin-top: var(--space-2); }
+
+/* — forms — */
+.field > label { display: block; font-size: 14px; margin-bottom: 5px; }
+.input {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--color-text);
+  caret-color: var(--color-accent);
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider);
+  border-radius: var(--radius-md);
+}
+.input:hover { border-color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+.input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
+
+/* — tables — */
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th {
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-divider);
+}
+.table td {
+  padding: var(--space-2);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+.table tbody tr:hover { background: color-mix(in srgb, var(--color-text) 4%, transparent); }
+
+/* — layout grid shared by the dashboard — */
+.mesh-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 360px minmax(0, 1fr);
+  grid-template-areas: 'controls main' 'devices main';
+  grid-template-rows: auto 1fr;
+  align-items: start;
+}
+@media (max-width: 1000px) {
+  .mesh-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'controls' 'main' 'devices';
+    grid-template-rows: auto;
+  }
+}
+
+.mesh-scroll { scrollbar-width: thin; }
+.mesh-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.mesh-scroll::-webkit-scrollbar-thumb { background: #3a3c40; }
+
+.section-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* — dialog/popup, matching the design's own token system — */
+.dialog-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  display: grid; place-items: center;
+  padding: var(--space-4);
+  background: color-mix(in srgb, #000 55%, transparent);
+}
+.dialog {
+  width: min(680px, 94vw);
+  /* Generous enough that normal content never triggers scroll — this is a
+     last-resort safety net for pathologically tall content, not a cap
+     meant to kick in for anything reasonably sized. Widening the dialog
+     (vs. the old 560px) matters here too: the same text wraps onto fewer
+     lines at this width, which is what actually keeps short content like
+     How-to-test under the max-height instead of just barely tipping over
+     it and spawning a scrollbar for a couple of stray pixels. */
+  max-height: 95vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider);
+  box-shadow: var(--shadow-lg);
+}

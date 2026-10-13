@@ -52,7 +52,7 @@ public class ApiController {
     public ResponseEntity<?> demoSend(@RequestBody DemoSendRequest req) throws Exception {
         MeshPacket packet = demo.createPacket(
                 req.senderVpa, req.receiverVpa, req.amount, req.pin,
-                req.ttl == null ? 5 : req.ttl);
+                req.ttl == null ? 5 : req.ttl, req.flaw);
 
         String startDevice = req.startDevice == null ? "phone-alice" : req.startDevice;
         mesh.inject(startDevice, packet);
@@ -72,6 +72,8 @@ public class ApiController {
         public String pin;
         public Integer ttl;
         public String startDevice;
+        /** Optional: corrupt | stale | future | unknown_sender | bad_signature — demo-only, see DemoService. */
+        public String flaw;
     }
 
     // -------------------------------------------------------------- mesh sim
@@ -80,14 +82,16 @@ public class ApiController {
     public Map<String, Object> meshState() {
         List<Map<String, Object>> deviceData = new ArrayList<>();
         for (VirtualDevice d : mesh.getDevices()) {
-            deviceData.add(Map.of(
-                    "deviceId", d.getDeviceId(),
-                    "hasInternet", d.hasInternet(),
-                    "packetCount", d.packetCount(),
-                    "packetIds", d.getHeldPackets().stream()
-                            .map(p -> p.getPacketId().substring(0, 8))
-                            .toList()
-            ));
+            Map<String, Object> entry = new HashMap<>();
+            entry.put("deviceId", d.getDeviceId());
+            entry.put("hasInternet", d.hasInternet());
+            entry.put("packetCount", d.packetCount());
+            entry.put("maxCapacity", d.getMaxCapacity());
+            entry.put("droppedForCapacity", d.getDroppedForCapacity());
+            entry.put("packetIds", d.getHeldPackets().stream()
+                    .map(p -> p.getPacketId().substring(0, 8))
+                    .toList());
+            deviceData.add(entry);
         }
         return Map.of(
                 "devices", deviceData,
@@ -95,11 +99,19 @@ public class ApiController {
         );
     }
 
+    /** Demo-only: simulate a device walking into/out of signal. */
+    @PostMapping("/mesh/devices/{deviceId}/toggle-internet")
+    public Map<String, Object> toggleInternet(@PathVariable String deviceId) {
+        boolean online = mesh.toggleInternet(deviceId);
+        return Map.of("deviceId", deviceId, "hasInternet", online);
+    }
+
     @PostMapping("/mesh/gossip")
     public Map<String, Object> meshGossip() {
         MeshSimulatorService.GossipResult r = mesh.gossipOnce();
         return Map.of(
                 "transfers", r.transfers(),
+                "droppedForCapacity", r.droppedForCapacity(),
                 "deviceCounts", r.deviceCounts()
         );
     }
@@ -121,6 +133,11 @@ public class ApiController {
         uploads.parallelStream().forEach(up -> {
             BridgeIngestionService.IngestResult r =
                     bridge.ingest(up.packet(), up.bridgeNodeId(), 5 - up.packet().getTtl());
+            // The backend has now given this packet a final verdict (settled,
+            // rejected, invalid, or confirmed duplicate) — nobody in the mesh,
+            // including offline devices that never got to flush it, needs to
+            // keep holding it anymore.
+            mesh.purgePacket(up.packet().getPacketId());
             synchronized (results) {
                 results.add(Map.of(
                         "bridgeNode", up.bridgeNodeId(),
