@@ -1,0 +1,9 @@
+target/
+frontend/
+local-notes/
+.git/
+.idea/
+.vscode/
+.claude/
+*.md
+docker-compose.yml
