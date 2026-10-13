@@ -25,4 +25,10 @@ COPY --from=build /app/target/*.jar app.jar
 # straight from the environment via this property placeholder.
 ENV PORT=8080
 EXPOSE 8080
-ENTRYPOINT ["sh", "-c", "java -jar app.jar --server.port=${PORT}"]
+# java.security.egd=file:/dev/./urandom: on a freshly-started, CPU-limited
+# container, the JVM's default SecureRandom can block waiting for OS
+# entropy — this app calls it heavily on boot (the server's RSA keypair
+# plus one more per demo account), which was stalling startup past
+# Render's port-scan timeout. urandom is non-blocking and fine for this
+# use (key generation at boot, not a long-lived secret-rotation service).
+ENTRYPOINT ["sh", "-c", "java -Djava.security.egd=file:/dev/./urandom -jar app.jar --server.port=${PORT}"]
