@@ -1,10 +1,10 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist/frontend/browser",
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://REPLACE-WITH-YOUR-BACKEND-URL.onrender.com/api/:path*"
-    }
-  ]
+    "buildCommand": "npm run build",
+    "outputDirectory": "dist/frontend/browser",
+    "rewrites": [
+        {
+            "source": "/api/:path*",
+            "destination": "https://upi-without-internet-o70z.onrender.com"
+        }
+    ]
 }
