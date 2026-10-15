@@ -4,7 +4,7 @@
     "rewrites": [
         {
             "source": "/api/:path*",
-            "destination": "https://upi-without-internet-o70z.onrender.com"
+            "destination": "https://upi-without-internet-o70z.onrender.com/api/:path*"
         }
     ]
 }

@@ -141,11 +141,14 @@ export class MeshStateService {
       mesh: this.api.getMeshState(),
       accounts: this.api.getAccounts(),
       transactions: this.api.getTransactions()
-    }).subscribe(({ mesh, accounts, transactions }) => {
-      this.devices.set(mesh.devices);
-      this.idempotencyCacheSize.set(mesh.idempotencyCacheSize);
-      this.accounts.set(accounts);
-      this.transactions.set(transactions);
+    }).subscribe({
+      next: ({ mesh, accounts, transactions }) => {
+        this.devices.set(mesh.devices);
+        this.idempotencyCacheSize.set(mesh.idempotencyCacheSize);
+        this.accounts.set(accounts);
+        this.transactions.set(transactions);
+      },
+      error: (err) => this.addLog(`refresh failed: ${err.message ?? err}`)
     });
   }
 
